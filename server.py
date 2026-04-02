@@ -213,3 +213,22 @@ async def handle_interaction(request: Request):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/debug")
+async def debug():
+    auth = requests.post(
+        "https://slack.com/api/auth.test",
+        headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
+    ).json()
+    conv = requests.post(
+        "https://slack.com/api/conversations.open",
+        headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
+        json={"users": ANAS_SLACK_ID},
+    ).json()
+    return {
+        "bot_identity": auth,
+        "anas_dm_channel": conv,
+        "anas_id_configured": ANAS_SLACK_ID,
+    }
+
