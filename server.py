@@ -21,7 +21,7 @@ def verify_slack_signature(request_body: bytes, timestamp: str, signature: str) 
     if abs(time.time() - int(timestamp)) > 300:
         return False
     basestring = f"v0:{timestamp}:{request_body.decode()}"
-    computed = "v0=" + hmac.new(
+    computed = "v0=" + hmac.HMAC(
         SLACK_SIGNING_SECRET.encode(), basestring.encode(), hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(computed, signature)
@@ -144,11 +144,17 @@ async def send_update(request: Request):
     items = body.get("items", [])
     if not items:
         return JSONResponse({"error": "No items provided"}, status_code=400)
-    result = send_eod_message(items)
-    if result.get("ok"):
-        return {"status": "sent", "channel": result.get("channel"), "ts": result.get("ts")}
-    else:
-        return JSONResponse({"error": result.get("error")}, status_code=500)
+    try:
+        result = send_eod_message(items)
+        print(f"Slack API response: {result}")
+        if result.get("ok"):
+            return {"status": "sent", "channel": result.get("channel"), "ts": result.get("ts")}
+        else:
+            return JSONResponse({"error": result.get("error")}, status_code=500)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 @app.post("/slack/interactions")
